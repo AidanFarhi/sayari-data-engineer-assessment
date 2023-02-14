@@ -49,29 +49,24 @@ class BusinessSearchSpider(scrapy.Spider):
     def closed(self, reason):
         df = pd.DataFrame(self.company_rows)
         df.to_csv('data.csv', index=False)
-        self.generate_graph(df)
+        self.generate_graph(pd.read_csv('data.csv'))
 
     def generate_graph(self, df):
         edge_df = self.generate_edge_list(df)
         g = nx.Graph()
-        g.add_nodes_from(df['Company'].unique())
-        for _, row in edge_df.iterrows():
-            g.add_edge(row['source_company'], row['target_company'])
-        pos = nx.spring_layout(g, k=.7)
+        g.add_nodes_from([x for col in df.columns for x in df[col].dropna().unique()])
+        for _, row in edge_df.iterrows(): 
+            g.add_edge(row['source'], row['target'])
+        pos = nx.spring_layout(g, k=.2)
         plt.figure(figsize=(7,7)) 
         nx.draw(
             g, pos, node_size=32, font_size=2.25, font_color='white', 
             with_labels=True, width=.3, edge_color='grey'
-         )
+        )
         plt.savefig('graph.png', dpi=500, facecolor='black')
 
     def generate_edge_list(self, df):
-        merged = pd.merge(
-            df, df[df['Commercial Registered Agent'].notnull()], on=['Commercial Registered Agent'], how='inner'
-        )
-        merged = pd.concat([merged, pd.merge(df, df[df['Registered Agent'].notnull()], on=['Registered Agent'], how='inner')])
-        merged = pd.concat([merged, pd.merge(df, df[df['Owners'].notnull()], on=['Owners'], how='inner')])
-        merged = merged[merged['Company_x'] < merged['Company_y']]
-        merged = merged[['Company_x', 'Company_y']].drop_duplicates()
-        merged.columns = ['source_company', 'target_company']
-        return merged
+        cols = ['Company', 'Commercial Registered Agent', 'Registered Agent', 'Owners']
+        dfs = [df[[c1, c2]][(~df[c2].isnull()) & (~df[c1].isnull())].rename(columns={c1: 'source', c2: 'target'})
+            for i, c1 in enumerate(cols) for c2 in cols[i+1:]]
+        return pd.concat(dfs)
