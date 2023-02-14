@@ -11,7 +11,7 @@ class BusinessSearchSpider(scrapy.Spider):
     headers = {
         'Content-Type': 'application/json', 'Accept': '*/*', 'authorization': 'undefined'
     }
-    business_search_payload = {"SEARCH_VALUE": "X", "STARTS_WITH_YN": "true" ,"ACTIVE_ONLY_YN": True}
+    business_search_payload = {'SEARCH_VALUE': 'X', 'STARTS_WITH_YN': 'true', 'ACTIVE_ONLY_YN': True}
     business_search_endpoint = 'https://firststop.sos.nd.gov/api/Records/businesssearch'
     filing_detail_base_url = 'https://firststop.sos.nd.gov/api/FilingDetail/business/'
     company_rows = []
@@ -27,11 +27,11 @@ class BusinessSearchSpider(scrapy.Spider):
         for business_id in data:
             endpoint = f'{self.filing_detail_base_url}{business_id}/false'
             yield scrapy.Request(
-                endpoint, callback=self.process_company_data, 
+                endpoint, callback=self.process_business_data, 
                 headers=self.headers, meta={'company': data[business_id]['TITLE'][0]}
             )
 
-    def process_company_data(self, response):
+    def process_business_data(self, response):
         sleep(.1)
         new_row = {
             'Company': response.meta['company'].upper(), 'Commercial Registered Agent': None, 
