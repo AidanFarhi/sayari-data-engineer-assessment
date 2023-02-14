@@ -49,7 +49,7 @@ class BusinessSearchSpider(scrapy.Spider):
     def closed(self, reason):
         df = pd.DataFrame(self.company_rows)
         df.to_csv('data.csv', index=False)
-        self.generate_graph(pd.read_csv('data.csv'))
+        self.generate_graph(df)
 
     def generate_graph(self, df):
         edge_df = self.generate_edge_list(df)
@@ -57,10 +57,10 @@ class BusinessSearchSpider(scrapy.Spider):
         g.add_nodes_from([x for col in df.columns for x in df[col].dropna().unique()])
         for _, row in edge_df.iterrows(): 
             g.add_edge(row['source'], row['target'])
-        pos = nx.spring_layout(g, k=.2)
-        plt.figure(figsize=(7,7)) 
+        pos = nx.fruchterman_reingold_layout(g, k=.16)
+        plt.figure(figsize=(12,12)) 
         nx.draw(
-            g, pos, node_size=32, font_size=2.25, font_color='white', 
+            g, pos, node_size=15, font_size=2.25, font_color='white', 
             with_labels=True, width=.3, edge_color='grey'
         )
         plt.savefig('graph.png', dpi=500, facecolor='black')
