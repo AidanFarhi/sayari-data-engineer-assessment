@@ -50,26 +50,28 @@ class BusinessSearchSpider(scrapy.Spider):
         df = pd.DataFrame(self.company_rows)
         df.to_csv('data.csv', index=False)
         self.generate_graph(df)
-    
+
     def generate_graph(self, df):
-        # Need to generate edge list of companies that are connected
-        pass
-        # df = pd.read_csv('data.csv')
-        # commercial_registered_agent_df = df[df['Commercial Registered Agent'].notnull()]
-        # registered_agent_df = df[df['Registered Agent'].notnull()]
-        # owners_df = df[df['Owners'].notnull()]
-        # g = nx.Graph()
-        # g.add_nodes_from(df['Company'])
-        # g2 = nx.from_pandas_edgelist(commercial_registered_agent_df, source='Company', target='Commercial Registered Agent')
-        # g3 = nx.from_pandas_edgelist(registered_agent_df, source='Company', target='Registered Agent')
-        # g4 = nx.from_pandas_edgelist(owners_df, source='Company', target='Owners')
-        # combined = nx.compose(g, g2)
-        # combined2 = nx.compose(combined, g3)
-        # all_nodes = nx.compose(combined2, g4)
-        # pos = nx.spring_layout(all_nodes, k=.2)
-        # plt.figure(figsize=(9,9)) 
-        # nx.draw(
-        #     all_nodes, pos, node_size=32, font_size=2.25, font_color='white', 
-        #     with_labels=True, width=.3, edge_color='grey'
-        # )
-        # plt.savefig('graph.png', dpi=500, facecolor='black')
+        edge_df = self.generate_edge_list(df)
+        g = nx.Graph()
+        g.add_nodes_from(df['Company'].unique())
+        for _, row in edge_df.iterrows():
+            g.add_edge(row['source_company'], row['target_company'])
+        pos = nx.spring_layout(g, k=.7)
+        plt.figure(figsize=(7,7)) 
+        nx.draw(
+            g, pos, node_size=32, font_size=2.25, font_color='white', 
+            with_labels=True, width=.3, edge_color='grey'
+         )
+        plt.savefig('graph.png', dpi=500, facecolor='black')
+
+    def generate_edge_list(self, df):
+        merged = pd.merge(
+            df, df[df['Commercial Registered Agent'].notnull()], on=['Commercial Registered Agent'], how='inner'
+        )
+        merged = pd.concat([merged, pd.merge(df, df[df['Registered Agent'].notnull()], on=['Registered Agent'], how='inner')])
+        merged = pd.concat([merged, pd.merge(df, df[df['Owners'].notnull()], on=['Owners'], how='inner')])
+        merged = merged[merged['Company_x'] < merged['Company_y']]
+        merged = merged[['Company_x', 'Company_y']].drop_duplicates()
+        merged.columns = ['source_company', 'target_company']
+        return merged
