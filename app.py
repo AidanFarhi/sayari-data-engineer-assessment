@@ -40,8 +40,8 @@ class BusinessSearchSpider(scrapy.Spider):
         for r in response.json()['DRAWER_DETAIL_LIST']:
             if r['LABEL'] == 'Commercial Registered Agent': 
                 new_row['Commercial Registered Agent'] = r['VALUE'][:r['VALUE'].index('\n')].upper()
-            if r['LABEL'] == 'Registered Agent,': 
-                new_row['Registered Agent'] = r['VALUE'].upper()
+            if r['LABEL'] == 'Registered Agent': 
+                new_row['Registered Agent'] = r['VALUE'][:r['VALUE'].index('\n')].upper()
             if r['LABEL'] == 'Owner Name': 
                 new_row['Owners'] = r['VALUE'].upper()
         self.company_rows.append(new_row)
